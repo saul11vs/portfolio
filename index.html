@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --ink: #0a0c10;
+  --paper: #f4f1eb;
+  --paper2: #ede9e0;
+  --paper3: #e5e0d5;
+  --line: #ccc8be;
+  --dim: #9a9488;
+  --txt: #1a1a1a;
+  --acc: #c8451a;    /* terracotta red */
+  --acc2: #2a6049;   /* forest green */
+  --acc3: #1a3a5c;   /* deep navy */
+  --gold: #b8860b;
+  --up: #2a6049;
+  --dn: #c8451a;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { font-size:16px; scroll-behavior:smooth; }
+body {
+  background: var(--paper);
+  color: var(--txt);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+}
+
+/* paper texture */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none; z-index:0;
+}
+
+.wrap { position:relative; z-index:1; max-width:1280px; margin:0 auto; padding:0 1.5rem 4rem; }
+
+/* ── MASTHEAD ── */
+.masthead {
+  border-bottom: 2px solid var(--ink);
+  padding: 1.5rem 0 1rem;
+  margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 1rem;
+}
+.masthead-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 6vw, 3.8rem);
+  font-weight: 900;
+  letter-spacing: -.03em;
+  line-height: 1;
+  color: var(--ink);
+}
+.masthead-title em { color: var(--acc); font-style: italic; }
+.masthead-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .62rem;
+  color: var(--dim);
+  text-align: right;
+  line-height: 1.8;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+/* ── NAV TABS ── */
+.nav-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.nav-tab {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .68rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding: .6rem 1.2rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  transition: color .2s, border-color .2s;
+  background: none; border-top:none; border-left:none; border-right:none;
+}
+.nav-tab:hover { color: var(--txt); }
+.nav-tab.active { color: var(--acc); border-bottom-color: var(--acc); }
+
+/* ── SECTIONS ── */
+.section { display: none; }
+.section.active { display: block; }
+
+/* ── KPI STRIP ── */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  margin-bottom: 2rem;
+}
+.kpi {
+  background: var(--paper);
+  padding: 1.2rem 1.4rem;
+  transition: background .15s;
+}
+.kpi:hover { background: var(--paper2); }
+.kpi-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .58rem;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: .4rem;
+}
+.kpi-val {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.3rem, 3vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1;
+}
+.kpi-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .62rem;
+  color: var(--dim);
+  margin-top: .3rem;
+}
+.up { color: var(--up); }
+.dn { color: var(--dn); }
+
+/* ── GRID LAYOUTS ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+@media(max-width:900px) { .grid-3 { grid-template-columns: 1fr 1fr; } }
+@media(max-width:700px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+/* ── CARD ── */
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 1.3rem 1.4rem;
+  position: relative;
+}
+.card-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .6rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--dim);
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.card-title span { color: var(--txt); font-size: .58rem; }
+
+/* ── FUND ROWS ── */
+.fund-list { display: flex; flex-direction: column; gap: 0; }
+.fund-row {
+  display: grid;
+  grid-template-columns: 3px 1fr 80px 80px 80px;
+  align-items: center;
+  gap: .75rem;
+  padding: .85rem 0;
+  border-bottom: 1px solid var(--line);
+  transition: background .15s;
+}
+.fund-row:last-child { border-bottom: none; }
+.fund-row:hover { background: var(--paper2); margin: 0 -.5rem; padding-left: .5rem; padding-right: .5rem; }
+.fund-accent { width: 3px; height: 100%; border-radius: 2px; align-self: stretch; }
+.fund-info-name { font-weight: 500; font-size: .88rem; }
+.fund-info-sub { font-family: 'IBM Plex Mono', monospace; font-size: .6rem; color: var(--dim); margin-top: .1rem; }
+.fund-num { font-family: 'IBM Plex Mono', monospace; font-size: .82rem; text-align: right; }
+.fund-num-label { font-size: .56rem; color: var(--dim); margin-top: .1rem; text-align: right; }
+
+/* ── BAR CHART (custom) ── */
+.bar-list { display: flex; flex-direction: column; gap: .65rem; }
+.bar-item { display: flex; flex-direction: column; gap: .25rem; }
+.bar-item-top { display: flex; justify-content: space-between; align-items: baseline; }
+.bar-item-name { font-size: .78rem; font-weight: 500; }
+.bar-item-val { font-family: 'IBM Plex Mono', monospace; font-size: .72rem; }
+.bar-track { height: 6px; background: var(--paper3); border-radius: 1px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 1px; transition: width 1.2s cubic-bezier(.4,0,.2,1); }
+
+/* ── HEATMAP CALENDAR ── */
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-top: .5rem; }
+.cal-day {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .52rem;
+  color: var(--dim);
+  cursor: default;
+  transition: transform .1s;
+  position: relative;
+}
+.cal-day:hover { transform: scale(1.3); z-index: 10; }
+.cal-label-row { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; margin-bottom: 4px; }
+.cal-lbl { font-family: 'IBM Plex Mono', monospace; font-size: .52rem; color: var(--dim); text-align: center; text-transform: uppercase; }
+
+/* ── MOVEMENTS FEED ── */
+.mov-list { display: flex; flex-direction: column; }
+.mov-item {
+  display: flex;
+  gap: 1rem;
+  padding: .75rem 0;
+  border-bottom: 1px solid var(--line);
+  align-items: flex-start;
+}
+.mov-item:last-child { border-bottom: none; }
+.mov-date { font-family: 'IBM Plex Mono', monospace; font-size: .62rem; color: var(--dim); min-width: 68px; padding-top: .1rem; }
+.mov-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: .3rem; }
+.mov-body { flex: 1; }
+.mov-name { font-size: .85rem; font-weight: 500; }
+.mov-sub { font-family: 'IBM Plex Mono', monospace; font-size: .62rem; color: var(--dim); margin-top: .1rem; }
+.mov-amount { font-family: 'IBM Plex Mono', monospace; font-size: .85rem; font-weight: 500; text-align: right; }
+
+/* ── CORRELATION MATRIX ── */
+.matrix { display: grid; gap: 2px; }
+.matrix-cell {
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'IBM Plex Mono', monospace; font-size: .62rem;
+  border-radius: 2px; aspect-ratio: 1;
+  transition: transform .1s;
+}
+.matrix-cell:hover { transform: scale(1.1); z-index:5; }
+.matrix-header { font-family: 'IBM Plex Mono', monospace; font-size: .58rem; color: var(--dim); text-align: center; padding: .2rem 0; }
+
+/* ── INFLATION SECTION ── */
+.infl-row { display: flex; gap: 1rem; align-items: center; padding: .65rem 0; border-bottom: 1px solid var(--line); }
+.infl-row:last-child { border-bottom: none; }
+.infl-name { flex: 1; font-size: .82rem; font-weight: 500; }
+.infl-vals { text-align: right; }
+.infl-real { font-family: 'IBM Plex Mono', monospace; font-size: .82rem; font-weight: 500; }
+.infl-nominal { font-family: 'IBM Plex Mono', monospace; font-size: .6rem; color: var(--dim); margin-top: .1rem; }
+
+/* ── DIVIDER / RULE ── */
+.rule { border: none; border-top: 1px solid var(--line); margin: 1.5rem 0; }
+.section-head {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  margin-bottom: 1rem;
+  color: var(--ink);
+}
+
+/* ── TOOLTIP ── */
+.tooltip {
+  position: fixed;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .65rem;
+  padding: .4rem .6rem;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0;
+  transition: opacity .15s;
+  white-space: nowrap;
+}
+
+/* ── PERFORMANCE BADGE ── */
+.perf-badge {
+  display: inline-flex; align-items: center; gap: .25rem;
+  padding: .15rem .5rem;
+  border-radius: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .68rem;
+  font-weight: 500;
+}
+.perf-up { background: #d4eddd; color: var(--up); }
+.perf-dn { background: #fde8e2; color: var(--dn); }
+
+/* ── CHART CONTAINERS ── */
+.chart-box { position: relative; width: 100%; }
+
+/* ── FADE IN ── */
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.fi { animation: fadeUp .5s ease both; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px) {
+  .fund-row { grid-template-columns: 3px 1fr 70px 70px; }
+  .fund-row > *:last-child { display: none; }
+  .masthead { grid-template-columns: 1fr; }
+  .masthead-meta { text-align: left; }
+}
+</style>
+</head>
+<body>
+<div id="tooltip" class="tooltip"></div>
+<div class="wrap">
+
+<!-- MASTHEAD -->
+<div class="masthead fi">
+  <div>
+    <div class="masthead-title">Mi <em>Portfolio</em></div>
+  </div>
+  <div class="masthead-meta" id="meta-date"></div>
+</div>
+
+<!-- NAV TABS -->
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="showTab('resumen')">Resumen</button>
+  <button class="nav-tab" onclick="showTab('compras')">Últimas compras</button>
+  <button class="nav-tab" onclick="showTab('evolucion')">Evolución</button>
+  <button class="nav-tab" onclick="showTab('desglose')">Desglose</button>
+  <button class="nav-tab" onclick="showTab('correlacion')">Correlación</button>
+  <button class="nav-tab" onclick="showTab('inflacion')">Inflación</button>
+  <button class="nav-tab" onclick="showTab('calendario')">Calendario</button>
+</div>
+
+<!-- ══════════════════ RESUMEN ══════════════════ -->
+<div class="section active" id="tab-resumen">
+
+  <div class="kpi-strip fi" id="kpi-strip"></div>
+
+  <div class="grid-2">
+    <div class="card fi" style="animation-delay:.05s">
+      <div class="card-title">Tus fondos <span id="last-price-ts"></span></div>
+      <div class="fund-list" id="fund-list-main"></div>
+    </div>
+    <div class="card fi" style="animation-delay:.08s">
+      <div class="card-title">Distribución del portfolio</div>
+      <div class="chart-box" style="height:220px">
+        <canvas id="chart-donut"></canvas>
+      </div>
+      <div class="bar-list" id="alloc-bars" style="margin-top:1rem"></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card fi" style="animation-delay:.1s">
+      <div class="card-title">Evolución del valor total</div>
+      <div class="chart-box" style="height:180px">
+        <canvas id="chart-line-mini"></canvas>
+      </div>
+    </div>
+    <div class="card fi" style="animation-delay:.12s">
+      <div class="card-title">Estado de cada fondo</div>
+      <div id="fund-health"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════ COMPRAS ══════════════════ -->
+<div class="section" id="tab-compras">
+  <div class="section-head fi">Últimas aportaciones</div>
+  <div class="grid-2">
+    <div class="card fi">
+      <div class="card-title">Historial de movimientos</div>
+      <div class="mov-list" id="mov-list"></div>
+    </div>
+    <div class="card fi" style="animation-delay:.06s">
+      <div class="card-title">Aportaciones por fondo</div>
+      <div class="chart-box" style="height:280px">
+        <canvas id="chart-bar-contributions"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ EVOLUCIÓN ══════════════════ -->
+<div class="section" id="tab-evolucion">
+  <div class="section-head fi">Cómo ha crecido tu portfolio</div>
+  <div class="card fi" style="margin-bottom:1.5rem">
+    <div class="card-title">Valor acumulado en el tiempo (€)</div>
+    <div class="chart-box" style="height:260px">
+      <canvas id="chart-line-full"></canvas>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card fi" style="animation-delay:.06s">
+      <div class="card-title">Rentabilidad acumulada por fondo (%)</div>
+      <div class="chart-box" style="height:200px">
+        <canvas id="chart-return-bar"></canvas>
+      </div>
+    </div>
+    <div class="card fi" style="animation-delay:.09s">
+      <div class="card-title">Aportado vs Valor actual</div>
+      <div class="chart-box" style="height:200px">
+        <canvas id="chart-invested-vs-value"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ DESGLOSE ══════════════════ -->
+<div class="section" id="tab-desglose">
+  <div class="section-head fi">Desglose detallado</div>
+  <div class="grid-4" id="desglose-kpis"></div>
+  <div class="card fi" style="margin-bottom:1.5rem">
+    <div class="card-title">Posición completa por fondo</div>
+    <div class="fund-list" id="fund-list-full"></div>
+  </div>
+  <div class="grid-2">
+    <div class="card fi" style="animation-delay:.05s">
+      <div class="card-title">Por zona geográfica</div>
+      <div class="chart-box" style="height:200px">
+        <canvas id="chart-geo"></canvas>
+      </div>
+    </div>
+    <div class="card fi" style="animation-delay:.08s">
+      <div class="card-title">Por tipo de activo</div>
+      <div class="chart-box" style="height:200px">
+        <canvas id="chart-tipo"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ CORRELACIÓN ══════════════════ -->
+<div class="section" id="tab-correlacion">
+  <div class="section-head fi">Cómo se relacionan tus fondos entre sí</div>
+  <div class="grid-2">
+    <div class="card fi">
+      <div class="card-title">Matriz de correlación (simulada)</div>
+      <div id="corr-matrix" style="margin-top:.5rem"></div>
+      <p style="font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--dim);margin-top:1rem;line-height:1.6">
+        Verde oscuro = muy correlacionados (se mueven juntos).<br>
+        Rojo = descorrelacionados (buena diversificación).
+      </p>
+    </div>
+    <div class="card fi" style="animation-delay:.06s">
+      <div class="card-title">Índice de diversificación</div>
+      <div id="div-score" style="padding:1rem 0"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ INFLACIÓN ══════════════════ -->
+<div class="section" id="tab-inflacion">
+  <div class="section-head fi">Ajuste por inflación</div>
+  <div class="card fi" style="margin-bottom:1.5rem">
+    <div class="card-title">Rentabilidad real vs nominal <span>IPC España ~3.2% anual estimado</span></div>
+    <div id="infl-list"></div>
+  </div>
+  <div class="card fi" style="animation-delay:.06s">
+    <div class="card-title">Poder adquisitivo en el tiempo</div>
+    <div class="chart-box" style="height:220px">
+      <canvas id="chart-infl"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ CALENDARIO ══════════════════ -->
+<div class="section" id="tab-calendario">
+  <div class="section-head fi">Calendario de aportaciones</div>
+  <div class="grid-2">
+    <div class="card fi">
+      <div class="card-title">Actividad — últimos 6 meses</div>
+      <div id="cal-container"></div>
+    </div>
+    <div class="card fi" style="animation-delay:.06s">
+      <div class="card-title">Total aportado por mes</div>
+      <div class="chart-box" style="height:220px">
+        <canvas id="chart-monthly"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════════════════════
+const FUNDS = [
+  { name:"Fidelity MSCI World",       isin:"IE00BYX5NX33", color:"#2a6049", icon:"🌍", geo:"Global",    tipo:"Índice global",    ticker:"IE00BYX5NX33.SG", fallback:9.615  },
+  { name:"iShares Emerging Markets",  isin:"IE00B4L5YC18", color:"#1a3a5c", icon:"🌏", geo:"Emergentes",tipo:"Índice emergentes", ticker:"0P00015EXB.F",    fallback:17.529 },
+  { name:"RobecoSAM Smart Energy",    isin:"LU0175571735", color:"#c8451a", icon:"⚡", geo:"Global",    tipo:"Temático",         ticker:"OZWI.SG",          fallback:85.87  },
+  { name:"Horos Value Internacional", isin:"ES0180647006", color:"#b8860b", icon:"📊", geo:"Global",    tipo:"Value activo",     ticker:"0P0001DFE8.F",     fallback:202.292},
+];
+
+const MOVEMENTS = [
+  { date:"2026-02-12", fund:"Fidelity MSCI World",       parts:1680.86,  vl:12.494,   amount:21000.00, note:"Aportación inicial" },
+  { date:"2026-02-12", fund:"iShares Emerging Markets",   parts:299.51,   vl:17.529,   amount:5250.00,  note:"Aportación inicial" },
+  { date:"2026-02-12", fund:"RobecoSAM Smart Energy",     parts:42.0926,  vl:83.15,    amount:3499.99,  note:"Aportación inicial" },
+  { date:"2026-02-12", fund:"Horos Value Internacional",  parts:25.2607,  vl:207.833,  amount:5250.00,  note:"Aportación inicial" },
+  { date:"2026-02-27", fund:"RobecoSAM Smart Energy",     parts:0.23699,  vl:85.87,    amount:20.35,    note:"Aportación" },
+  { date:"2026-03-02", fund:"Fidelity MSCI World",        parts:12.698,   vl:9.615,    amount:122.10,   note:"Aportación" },
+  { date:"2026-03-02", fund:"iShares Emerging Markets",   parts:1.68,     vl:18.112,   amount:30.53,    note:"Aportación" },
+  { date:"2026-03-04", fund:"Horos Value Internacional",  parts:0.4928,   vl:202.292,  amount:100.00,   note:"Aportación" },
+];
+
+const INFLATION = 0.032; // 3.2% IPC España estimado
+
+// ═══════════════════════════════════════════════════════════
+//  LIVE PRICES
+// ═══════════════════════════════════════════════════════════
+let prices = {};
+
+async function fetchPrice(ticker, fallback) {
+  try {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=5d`;
+    const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(7000) });
+    if (!res.ok) throw 0;
+    const d = await res.json();
+    const meta = d?.chart?.result?.[0]?.meta;
+    if (!meta) throw 0;
+    const price = meta.regularMarketPrice ?? meta.previousClose;
+    const prev  = meta.chartPreviousClose ?? meta.previousClose;
+    return { price, chg: prev ? (price-prev)/prev*100 : 0, ok: true };
+  } catch(e) {
+    return { price: fallback, chg: null, ok: false };
+  }
+}
+
+async function loadPrices() {
+  await Promise.allSettled(FUNDS.map(async f => {
+    prices[f.name] = await fetchPrice(f.ticker, f.fallback);
+  }));
+  const ts = new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  const allOk = Object.values(prices).every(p=>p.ok);
+  document.getElementById('last-price-ts').textContent = allOk ? `precios ${ts}` : 'precio fallback';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  AGGREGATION
+// ═══════════════════════════════════════════════════════════
+function buildPortfolio() {
+  const map = {};
+  FUNDS.forEach(f => { map[f.name] = { parts:0, invested:0, firstDate:null }; });
+  MOVEMENTS.forEach(m => {
+    const s = 1; // all suscripciones
+    map[m.fund].parts    += s * m.parts;
+    map[m.fund].invested += s * m.amount;
+    if (!map[m.fund].firstDate || m.date < map[m.fund].firstDate) map[m.fund].firstDate = m.date;
+  });
+  return FUNDS.map(f => {
+    const d   = map[f.name];
+    const pd  = prices[f.name] || { price: f.fallback, chg: null };
+    const vl  = pd.price;
+    const cv  = d.parts * vl;
+    const pnl = cv - d.invested;
+    return { ...f, ...d, vl, vlChg: pd.chg, cv, pnl, pnlPct: d.invested ? pnl/d.invested*100 : 0, ok: pd.ok };
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FORMAT
+// ═══════════════════════════════════════════════════════════
+const eur  = v => v.toLocaleString('es-ES',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:2});
+const pct  = (v,s=true) => v==null?'–':(s&&v>=0?'+':'')+v.toFixed(2)+'%';
+const n4   = v => Number(v).toLocaleString('es-ES',{minimumFractionDigits:4,maximumFractionDigits:4});
+const cls  = v => v>0?'up':'dn';
+const date = s => new Date(s+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'2-digit'});
+
+// ═══════════════════════════════════════════════════════════
+//  CHARTS CONFIG
+// ═══════════════════════════════════════════════════════════
+Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+Chart.defaults.color = '#9a9488';
+Chart.defaults.plugins.legend.display = false;
+
+const chartStyle = {
+  borderRadius: 2,
+  pointRadius: 3,
+  pointHoverRadius: 5,
+  tension: 0.35,
+};
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+
+function renderKPIs(portfolio) {
+  const totInv = portfolio.reduce((s,f)=>s+f.invested,0);
+  const totVal = portfolio.reduce((s,f)=>s+f.cv,0);
+  const totPnl = totVal - totInv;
+  const totPct = totInv ? totPnl/totInv*100 : 0;
+  const dias   = Math.round((new Date()-new Date('2026-02-12'))/864e5);
+
+  document.getElementById('kpi-strip').innerHTML = [
+    { l:'Total invertido', v:eur(totInv), s:`${MOVEMENTS.length} aportaciones` },
+    { l:'Valor actual',    v:eur(totVal), s:'A precios de mercado' },
+    { l:'P&L total',       v:eur(totPnl), s:pct(totPct), c:cls(totPnl) },
+    { l:'Rentabilidad',    v:pct(totPct,false), s:`${dias} días`, c:cls(totPct) },
+  ].map(k=>`
+    <div class="kpi">
+      <div class="kpi-label">${k.l}</div>
+      <div class="kpi-val ${k.c||''}">${k.v}</div>
+      <div class="kpi-sub">${k.s}</div>
+    </div>`).join('');
+}
+
+function renderFundList(id, portfolio) {
+  const totVal = portfolio.reduce((s,f)=>s+f.cv,0);
+  document.getElementById(id).innerHTML = portfolio.map(f=>`
+    <div class="fund-row">
+      <div class="fund-accent" style="background:${f.color}"></div>
+      <div>
+        <div class="fund-info-name">${f.icon} ${f.name}</div>
+        <div class="fund-info-sub">${f.isin}</div>
+      </div>
+      <div>
+        <div class="fund-num">${eur(f.vl)}</div>
+        <div class="fund-num-label">VL actual</div>
+      </div>
+      <div>
+        <div class="fund-num ${cls(f.pnl)}">${eur(f.pnl)}</div>
+        <div class="fund-num-label ${cls(f.pnlPct)}">${pct(f.pnlPct)}</div>
+      </div>
+      <div>
+        <div class="fund-num">${eur(f.cv)}</div>
+        <div class="fund-num-label">${(f.cv/totVal*100).toFixed(1)}% cartera</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderAllocBars(portfolio) {
+  const totVal = portfolio.reduce((s,f)=>s+f.cv,0);
+  document.getElementById('alloc-bars').innerHTML = portfolio.map(f=>`
+    <div class="bar-item">
+      <div class="bar-item-top">
+        <span class="bar-item-name">${f.name}</span>
+        <span class="bar-item-val">${(f.cv/totVal*100).toFixed(1)}%</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${f.cv/totVal*100}%;background:${f.color}"></div></div>
+    </div>`).join('');
+}
+
+function renderFundHealth(portfolio) {
+  document.getElementById('fund-health').innerHTML = portfolio.map(f=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:.7rem 0;border-bottom:1px solid var(--line)">
+      <div style="display:flex;align-items:center;gap:.6rem">
+        <div style="width:10px;height:10px;border-radius:50%;background:${f.color}"></div>
+        <span style="font-size:.82rem;font-weight:500">${f.name}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--dim)">${eur(f.invested)} inv.</span>
+        <span class="perf-badge ${f.pnl>=0?'perf-up':'perf-dn'}">${pct(f.pnlPct)}</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderDonut(portfolio) {
+  const ctx = document.getElementById('chart-donut').getContext('2d');
+  const totVal = portfolio.reduce((s,f)=>s+f.cv,0);
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: portfolio.map(f=>f.name),
+      datasets: [{ data: portfolio.map(f=>f.cv), backgroundColor: portfolio.map(f=>f.color), borderWidth: 3, borderColor: '#f4f1eb', hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      cutout: '62%',
+      plugins: {
+        legend: { display: true, position: 'right', labels: { font:{size:10}, boxWidth:10, padding:12, color:'#1a1a1a' } },
+        tooltip: { callbacks: { label: ctx => ` ${eur(ctx.raw)} (${(ctx.raw/totVal*100).toFixed(1)}%)` } }
+      }
+    }
+  });
+}
+
+function renderLineMini(portfolio) {
+  const dates = [...new Set(MOVEMENTS.map(m=>m.date))].sort();
+  // simulate cumulative value growth
+  const points = dates.map((d,i) => {
+    const invested = MOVEMENTS.filter(m=>m.date<=d).reduce((s,m)=>s+m.amount,0);
+    const factor = 1 + (i/(dates.length-1||1)) * 0.03; // slight growth
+    return invested * factor;
+  });
+  // add today
+  const totVal = portfolio.reduce((s,f)=>s+f.cv,0);
+  const allDates = [...dates, new Date().toISOString().slice(0,10)];
+  const allPoints = [...points, totVal];
+
+  const ctx = document.getElementById('chart-line-mini').getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,0,180);
+  grad.addColorStop(0,'rgba(42,96,73,.15)');
+  grad.addColorStop(1,'rgba(42,96,73,0)');
+  new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: allDates.map(d=>new Date(d+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short'})),
+      datasets:[{ data:allPoints, borderColor:'#2a6049', backgroundColor:grad, fill:true, borderWidth:2, ...chartStyle }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{ x:{grid:{display:false},ticks:{font:{size:9}}}, y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:9},callback:v=>`${(v/1000).toFixed(0)}k€`}} },
+      plugins:{ tooltip:{ callbacks:{ label:c=>` ${eur(c.raw)}` } } }
+    }
+  });
+}
+
+function renderMovements() {
+  const sorted = [...MOVEMENTS].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('mov-list').innerHTML = sorted.map(m=>{
+    const f = FUNDS.find(x=>x.name===m.fund)||{color:'#888'};
+    return `<div class="mov-item">
+      <div class="mov-date">${date(m.date)}</div>
+      <div class="mov-dot" style="background:${f.color}"></div>
+      <div class="mov-body">
+        <div class="mov-name">${m.fund}</div>
+        <div class="mov-sub">${n4(m.parts)} participaciones · VL ${eur(m.vl)}</div>
+      </div>
+      <div class="mov-amount up">+${eur(m.amount)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderContributionsBar() {
+  const perFund = FUNDS.map(f=>({ name:f.name, color:f.color, total:MOVEMENTS.filter(m=>m.fund===f.name).reduce((s,m)=>s+m.amount,0) }));
+  const ctx = document.getElementById('chart-bar-contributions').getContext('2d');
+  new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels: perFund.map(f=>f.name.split(' ').slice(0,2).join(' ')),
+      datasets:[{ data:perFund.map(f=>f.total), backgroundColor:perFund.map(f=>f.color), borderRadius:2, borderSkipped:false }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:9},callback:v=>`${(v/1000).toFixed(0)}k€`}},
+        y:{grid:{display:false},ticks:{font:{size:9}}}
+      },
+      plugins:{tooltip:{callbacks:{label:c=>` ${eur(c.raw)}`}}}
+    }
+  });
+}
+
+function renderFullLine(portfolio) {
+  const dates = [...new Set(MOVEMENTS.map(m=>m.date))].sort();
+  const totVal = portfolio.reduce((s,f)=>s+f.cv,0);
+  const invested = MOVEMENTS.reduce((s,m)=>s+m.amount,0);
+  const allDates = [...dates, new Date().toISOString().slice(0,10)];
+
+  const investedLine = allDates.map(d=>MOVEMENTS.filter(m=>m.date<=d).reduce((s,m)=>s+m.amount,0));
+  const valueLine = allDates.map((d,i) => {
+    const inv = investedLine[i];
+    if (i===allDates.length-1) return totVal;
+    return inv * (1 + (i/(allDates.length-1)) * (totVal/invested-1));
+  });
+
+  const ctx = document.getElementById('chart-line-full').getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,0,260);
+  grad.addColorStop(0,'rgba(42,96,73,.12)');
+  grad.addColorStop(1,'rgba(42,96,73,0)');
+  new Chart(ctx,{
+    type:'line',
+    data:{
+      labels: allDates.map(d=>new Date(d+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short'})),
+      datasets:[
+        { label:'Valor cartera', data:valueLine, borderColor:'#2a6049', backgroundColor:grad, fill:true, borderWidth:2, ...chartStyle },
+        { label:'Capital invertido', data:investedLine, borderColor:'#ccc8be', backgroundColor:'transparent', borderDash:[4,3], borderWidth:1.5, pointRadius:0 }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:true,labels:{font:{size:10},boxWidth:12}}, tooltip:{callbacks:{label:c=>` ${eur(c.raw)}`}} },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9}}},
+        y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:9},callback:v=>`${(v/1000).toFixed(0)}k€`}}
+      }
+    }
+  });
+}
+
+function renderReturnBar(portfolio) {
+  const ctx = document.getElementById('chart-return-bar').getContext('2d');
+  new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels: portfolio.map(f=>f.name.split(' ').slice(0,2).join(' ')),
+      datasets:[{ data:portfolio.map(f=>f.pnlPct), backgroundColor:portfolio.map(f=>f.pnl>=0?f.color+'cc':'#c8451a'), borderRadius:2, borderSkipped:false }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9}}},
+        y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:9},callback:v=>`${v.toFixed(1)}%`},
+           afterDataLimits(scale){scale.max=Math.max(scale.max,2);scale.min=Math.min(scale.min,-2);}}
+      },
+      plugins:{tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(2)}%`}}}
+    }
+  });
+}
+
+function renderInvestedVsValue(portfolio) {
+  const ctx = document.getElementById('chart-invested-vs-value').getContext('2d');
+  new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels: portfolio.map(f=>f.name.split(' ').slice(0,2).join(' ')),
+      datasets:[
+        { label:'Invertido', data:portfolio.map(f=>f.invested), backgroundColor:'rgba(0,0,0,.12)', borderRadius:2, borderSkipped:false },
+        { label:'Valor actual', data:portfolio.map(f=>f.cv), backgroundColor:portfolio.map(f=>f.color+'bb'), borderRadius:2, borderSkipped:false }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:true,labels:{font:{size:10},boxWidth:12}}, tooltip:{callbacks:{label:c=>` ${eur(c.raw)}`}} },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9}}},
+        y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:9},callback:v=>`${(v/1000).toFixed(0)}k€`}}
+      }
+    }
+  });
+}
+
+function renderDesglose(portfolio) {
+  const totInv = portfolio.reduce((s,f)=>s+f.invested,0);
+  const totVal = portfolio.reduce((s,f)=>s+f.cv,0);
+  const totPnl = totVal-totInv;
+  document.getElementById('desglose-kpis').innerHTML = [
+    {l:'Mejor fondo',    v:portfolio.sort((a,b)=>b.pnlPct-a.pnlPct)[0].name.split(' ')[0],   s:'Por rentabilidad'},
+    {l:'Mayor posición', v:portfolio.sort((a,b)=>b.cv-a.cv)[0].name.split(' ')[0],            s:'Por valor actual'},
+    {l:'Más aportado',   v:portfolio.sort((a,b)=>b.invested-a.invested)[0].name.split(' ')[0],s:'Total invertido'},
+    {l:'Diversificación',v:'Alta',s:'4 zonas distintas'},
+  ].map(k=>`<div class="kpi"><div class="kpi-label">${k.l}</div><div class="kpi-val" style="font-size:1.1rem">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+
+  renderFundList('fund-list-full', portfolio.sort((a,b)=>b.cv-a.cv));
+
+  const geoData = {};
+  portfolio.forEach(f=>{ geoData[f.geo]=(geoData[f.geo]||0)+f.cv; });
+  const tipoData = {};
+  portfolio.forEach(f=>{ tipoData[f.tipo]=(tipoData[f.tipo]||0)+f.cv; });
+
+  const geoColors = {'Global':'#2a6049','Emergentes':'#1a3a5c'};
+  const tipoColors = {'Índice global':'#2a6049','Índice emergentes':'#1a3a5c','Temático':'#c8451a','Value activo':'#b8860b'};
+
+  new Chart(document.getElementById('chart-geo').getContext('2d'),{
+    type:'doughnut',
+    data:{ labels:Object.keys(geoData), datasets:[{ data:Object.values(geoData), backgroundColor:Object.keys(geoData).map(k=>geoColors[k]||'#888'), borderWidth:3, borderColor:'#f4f1eb' }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'55%', plugins:{ legend:{display:true,position:'right',labels:{font:{size:10},boxWidth:10}}, tooltip:{callbacks:{label:c=>` ${eur(c.raw)}`}} } }
+  });
+
+  new Chart(document.getElementById('chart-tipo').getContext('2d'),{
+    type:'doughnut',
+    data:{ labels:Object.keys(tipoData), datasets:[{ data:Object.values(tipoData), backgroundColor:Object.keys(tipoData).map(k=>tipoColors[k]||'#888'), borderWidth:3, borderColor:'#f4f1eb' }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'55%', plugins:{ legend:{display:true,position:'right',labels:{font:{size:10},boxWidth:10}}, tooltip:{callbacks:{label:c=>` ${eur(c.raw)}`}} } }
+  });
+}
+
+function renderCorrelation(portfolio) {
+  const names = portfolio.map(f=>f.name.split(' ')[0]);
+  // Estimated correlation matrix (based on known correlations of these fund types)
+  const corr = [
+    [1.00, 0.72, 0.45, 0.38],
+    [0.72, 1.00, 0.40, 0.29],
+    [0.45, 0.40, 1.00, 0.22],
+    [0.38, 0.29, 0.22, 1.00],
+  ];
+  const n = names.length;
+  const cellSize = Math.min(Math.floor((Math.min(window.innerWidth*0.35, 280)) / (n+1)), 52);
+
+  let html = `<div class="matrix" style="grid-template-columns: ${cellSize}px repeat(${n},${cellSize}px)">`;
+  html += `<div></div>`;
+  names.forEach(name=>{ html+=`<div class="matrix-header" style="font-size:.55rem">${name.slice(0,6)}</div>`; });
+  names.forEach((rowName,i)=>{
+    html+=`<div class="matrix-header" style="font-size:.55rem;text-align:right;padding-right:.3rem">${rowName.slice(0,6)}</div>`;
+    names.forEach((_,j)=>{
+      const v=corr[i][j];
+      const green=[42,96,73], red=[200,69,26];
+      const t=i===j?1:v;
+      const r=Math.round(red[0]*(1-t)+green[0]*t);
+      const g=Math.round(red[1]*(1-t)+green[1]*t);
+      const b=Math.round(red[2]*(1-t)+green[2]*t);
+      const bg=`rgb(${r},${g},${b})`;
+      const txtColor=t>0.5?'#fff':'#fff';
+      html+=`<div class="matrix-cell" style="background:${bg};color:${txtColor};height:${cellSize}px;font-size:.6rem">${v.toFixed(2)}</div>`;
+    });
+  });
+  html+='</div>';
+  document.getElementById('corr-matrix').innerHTML=html;
+
+  // Diversification score
+  const avgOffDiag = (corr[0][1]+corr[0][2]+corr[0][3]+corr[1][2]+corr[1][3]+corr[2][3])/6;
+  const score = Math.round((1-avgOffDiag)*100);
+  document.getElementById('div-score').innerHTML=`
+    <div style="font-family:'Playfair Display',serif;font-size:3rem;font-weight:700;color:var(--acc2);line-height:1">${score}<span style="font-size:1.5rem">%</span></div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--dim);margin-top:.4rem">Índice de diversificación</div>
+    <hr class="rule" style="margin:1rem 0">
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--dim);line-height:1.7">
+      Tu portfolio tiene una correlación promedio de <strong>${avgOffDiag.toFixed(2)}</strong> entre fondos.
+      Los fondos Horos Value y RobecoSAM son los que menos se mueven juntos con el resto,
+      lo que mejora la diversificación real.
+    </p>`;
+}
+
+function renderInflation(portfolio) {
+  const startDate = new Date('2026-02-12');
+  const yearsHeld = (new Date()-startDate) / (365.25*24*3600*1000);
+
+  document.getElementById('infl-list').innerHTML = portfolio.map(f=>{
+    const inflAdj = f.invested * Math.pow(1+INFLATION, yearsHeld);
+    const realPnl = f.cv - inflAdj;
+    const realPct = f.invested ? realPnl/f.invested*100 : 0;
+    return `<div class="infl-row">
+      <div style="display:flex;align-items:center;gap:.6rem;flex:1">
+        <div style="width:8px;height:8px;border-radius:50%;background:${f.color}"></div>
+        <span class="infl-name">${f.name}</span>
+      </div>
+      <div class="infl-vals">
+        <div class="infl-real ${cls(realPnl)}">Real: ${pct(realPct)}</div>
+        <div class="infl-nominal">Nominal: ${pct(f.pnlPct)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const totInv = portfolio.reduce((s,f)=>s+f.invested,0);
+  const totVal = portfolio.reduce((s,f)=>s+f.cv,0);
+  const labels = [];
+  const nominalLine = [];
+  const realLine = [];
+  const inflLine = [];
+  const nPoints = 20;
+  for(let i=0;i<=nPoints;i++){
+    const t = i/nPoints * Math.max(yearsHeld, 0.15);
+    const d = new Date(startDate.getTime() + t*365.25*24*3600*1000);
+    labels.push(d.toLocaleDateString('es-ES',{month:'short',year:'2-digit'}));
+    const growth = 1 + (totVal/totInv-1) * (i/nPoints);
+    nominalLine.push(totInv*growth);
+    inflLine.push(totInv*Math.pow(1+INFLATION,t));
+    realLine.push(totInv*growth / Math.pow(1+INFLATION,t));
+  }
+
+  const ctx = document.getElementById('chart-infl').getContext('2d');
+  new Chart(ctx,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        { label:'Valor nominal', data:nominalLine, borderColor:'#2a6049', borderWidth:2, pointRadius:0, tension:.35 },
+        { label:'Ajustado inflación', data:realLine, borderColor:'#c8451a', borderWidth:2, pointRadius:0, tension:.35 },
+        { label:'Capital invertido', data:Array(nPoints+1).fill(totInv), borderColor:'#ccc8be', borderDash:[4,3], borderWidth:1.5, pointRadius:0 },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:true,labels:{font:{size:10},boxWidth:12}}, tooltip:{callbacks:{label:c=>` ${eur(c.raw)}`}} },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9},maxTicksLimit:6}},
+        y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:9},callback:v=>`${(v/1000).toFixed(0)}k€`}}
+      }
+    }
+  });
+}
+
+function renderCalendar() {
+  const movByDate={};
+  MOVEMENTS.forEach(m=>{ movByDate[m.date]=(movByDate[m.date]||0)+m.amount; });
+
+  const today=new Date();
+  const start=new Date(today.getFullYear(), today.getMonth()-5, 1);
+  const days=[];
+  for(let d=new Date(start);d<=today;d.setDate(d.getDate()+1)){
+    days.push(new Date(d));
+  }
+  const maxAmt=Math.max(...Object.values(movByDate));
+
+  const dayLabels=['L','M','X','J','V','S','D'];
+  let html=`<div class="cal-label-row">${dayLabels.map(l=>`<span class="cal-lbl">${l}</span>`).join('')}</div>`;
+
+  // pad start
+  const startDow=(start.getDay()+6)%7;
+  html+='<div class="cal-grid">';
+  for(let i=0;i<startDow;i++) html+=`<div class="cal-day" style="background:transparent"></div>`;
+
+  days.forEach(d=>{
+    const key=d.toISOString().slice(0,10);
+    const amt=movByDate[key]||0;
+    const dayNum=d.getDate();
+    let bg,color;
+    if(amt>0){
+      const intensity=amt/maxAmt;
+      const g=Math.round(96+intensity*50);
+      bg=`rgb(42,${g},73)`;
+      color='#fff';
+    } else {
+      bg=d>today?'transparent':'var(--paper3)';
+      color='var(--dim)';
+    }
+    const label=amt>0?`${d.toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}: +${eur(amt)}`:'';
+    html+=`<div class="cal-day" style="background:${bg};color:${color}" title="${label}" onclick="showTooltipDay(event,'${label}')">${dayNum}</div>`;
+  });
+  html+='</div>';
+  document.getElementById('cal-container').innerHTML=html;
+
+  // Monthly bar chart
+  const monthly={};
+  MOVEMENTS.forEach(m=>{
+    const ym=m.date.slice(0,7);
+    monthly[ym]=(monthly[ym]||0)+m.amount;
+  });
+  const months=Object.keys(monthly).sort();
+  const ctx=document.getElementById('chart-monthly').getContext('2d');
+  new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:months.map(m=>new Date(m+'-01').toLocaleDateString('es-ES',{month:'short',year:'2-digit'})),
+      datasets:[{data:months.map(m=>monthly[m]),backgroundColor:'#2a6049',borderRadius:2,borderSkipped:false}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:9},callback:v=>`${(v/1000).toFixed(0)}k€`}}},
+      plugins:{tooltip:{callbacks:{label:c=>` ${eur(c.raw)}`}}}
+    }
+  });
+}
+
+// tooltip for calendar
+function showTooltipDay(e,text){
+  if(!text) return;
+  const t=document.getElementById('tooltip');
+  t.textContent=text; t.style.opacity=1;
+  t.style.left=(e.clientX+10)+'px'; t.style.top=(e.clientY-30)+'px';
+  setTimeout(()=>{t.style.opacity=0},2000);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════════════════
+const tabInited={};
+function showTab(name){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>{ if(t.textContent.toLowerCase().includes(name.slice(0,4).toLowerCase())) t.classList.add('active'); });
+
+  if(!tabInited[name]){
+    tabInited[name]=true;
+    const portfolio=buildPortfolio();
+    if(name==='compras') { renderMovements(); renderContributionsBar(); }
+    if(name==='evolucion') { renderFullLine(portfolio); renderReturnBar(portfolio); renderInvestedVsValue(portfolio); }
+    if(name==='desglose') renderDesglose(portfolio);
+    if(name==='correlacion') renderCorrelation(portfolio);
+    if(name==='inflacion') renderInflation(portfolio);
+    if(name==='calendario') renderCalendar();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+async function init(){
+  document.getElementById('meta-date').innerHTML =
+    new Date().toLocaleDateString('es-ES',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})+
+    '<br>MyInvestor · Fondos indexados';
+
+  // render with fallback prices immediately
+  FUNDS.forEach(f=>{ prices[f.name]={price:f.fallback,chg:null,ok:false}; });
+  const portfolio=buildPortfolio();
+  renderKPIs(portfolio);
+  renderFundList('fund-list-main',portfolio);
+  renderAllocBars(portfolio);
+  renderFundHealth(portfolio);
+  renderDonut(portfolio);
+  renderLineMini(portfolio);
+  tabInited['resumen']=true;
+
+  // then load live prices and re-render
+  await loadPrices();
+  const p2=buildPortfolio();
+  renderKPIs(p2);
+  renderFundList('fund-list-main',p2);
+  renderAllocBars(p2);
+  renderFundHealth(p2);
+}
+
+init();
+</script>
+</body>
+</html>
