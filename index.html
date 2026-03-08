@@ -358,67 +358,48 @@ function saveUrl() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  FETCH MOVEMENTS FROM GOOGLE SHEETS API
+//  FETCH ALL DATA — Single call to Apps Script
+//  Apps Script obtiene los precios desde Yahoo (sin CORS) y
+//  devuelve todo: precios + movimientos en una sola respuesta
 // ═══════════════════════════════════════════════════════════════
-async function fetchMovements() {
-  const url = localStorage.getItem(LS_URL);
-  if (!url) { showSetupNeeded(); return []; }
-
-  try {
-    // Apps Script no soporta CORS directamente → usamos allorigins
-    const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    const res   = await fetch(proxy, { signal: AbortSignal.timeout(10000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data  = await res.json();
-    if (!data.ok) throw new Error('Respuesta inesperada del script');
-    return data.movimientos || [];
-  } catch(e) {
-    console.error('Sheets error:', e);
-    setPill('err', 'Error al leer Sheets');
-    return [];
-  }
-}
-
 function showSetupNeeded() {
   setPill('err', 'Sin configurar');
   $('setup-banner').classList.add('visible');
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  FETCH PRICES — Yahoo Finance vía proxy
-// ═══════════════════════════════════════════════════════════════
-async function fetchPrice(ticker) {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=5d`;
-  const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-  const res = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const d = await res.json();
-  const meta = d?.chart?.result?.[0]?.meta;
-  if (!meta) throw new Error('sin datos');
-  const price = meta.regularMarketPrice ?? meta.previousClose;
-  const prev  = meta.chartPreviousClose ?? meta.previousClose;
-  return { price, chg: prev ? (price-prev)/prev*100 : 0, ts: meta.regularMarketTime };
-}
+async function fetchAll() {
+  const url = localStorage.getItem(LS_URL);
+  if (!url) { showSetupNeeded(); return null; }
 
-async function fetchAllPrices() {
-  // Check cache
+  // Check cache (4h)
   try {
     const cached = JSON.parse(sessionStorage.getItem(LS_CACHE)||'null');
-    if (cached && Date.now()-cached.ts < PRICE_TTL) { state.prices = cached.data; return; }
+    if (cached && Date.now()-cached.ts < PRICE_TTL) return cached.data;
   } catch(e){}
 
-  const results = {};
-  await Promise.allSettled(
-    Object.entries(FUND_META).map(async ([name, meta]) => {
-      try {
-        results[name] = await fetchPrice(meta.ticker);
-      } catch(e) {
-        results[name] = { price: meta.fallback, chg: null, ts: null, error: true };
-      }
-    })
-  );
-  state.prices = results;
-  try { sessionStorage.setItem(LS_CACHE, JSON.stringify({ ts: Date.now(), data: results })); } catch(e){}
+  try {
+    const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    const res   = await fetch(proxy, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data  = await res.json();
+    if (!data.ok) throw new Error('Respuesta inesperada');
+    // cache it
+    try { sessionStorage.setItem(LS_CACHE, JSON.stringify({ ts: Date.now(), data })); } catch(e){}
+    return data;
+  } catch(e) {
+    console.error('Apps Script error:', e);
+    setPill('err', 'Error al conectar con Google Sheets');
+    return null;
+  }
+}
+
+// fallback: use last known VL from movements
+function buildFallbackPrices() {
+  const prices = {};
+  Object.entries(FUND_META).forEach(([name, meta]) => {
+    prices[name] = { price: meta.fallback, chg: null, ok: false, error: true };
+  });
+  return prices;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -580,19 +561,34 @@ async function refresh() {
   setPill('', 'Cargando...');
 
   try {
-    const [movements] = await Promise.all([
-      fetchMovements(),
-      fetchAllPrices(),
-    ]);
-    state.movements = movements;
+    const data = await fetchAll();
+
+    if (!data) {
+      // no URL configured or error — render with fallback prices
+      state.prices = buildFallbackPrices();
+      render();
+      return;
+    }
+
+    // Prices come from Apps Script (fetched server-side from Yahoo)
+    state.movements = data.movimientos || [];
+    state.prices = {};
+    Object.entries(FUND_META).forEach(([name, meta]) => {
+      const p = data.prices?.[name];
+      if (p && p.price) {
+        state.prices[name] = { price: p.price, chg: p.chg, ok: p.ok };
+      } else {
+        state.prices[name] = { price: meta.fallback, chg: null, ok: false, error: true };
+      }
+    });
 
     const errFunds = Object.values(state.prices).filter(p=>p.error).length;
-    if (!localStorage.getItem(LS_URL)) {
-      setPill('err', 'Sin configurar');
-    } else if (errFunds === 0) {
+    if (errFunds === 0) {
       setPill('ok', `Precios actualizados · ${new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}`);
-    } else {
+    } else if (errFunds < Object.keys(FUND_META).length) {
       setPill('warn', `${Object.keys(FUND_META).length-errFunds}/${Object.keys(FUND_META).length} precios OK`);
+    } else {
+      setPill('warn', `Precios de respaldo · ${new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}`);
     }
 
     render();
@@ -608,8 +604,8 @@ async function refresh() {
 if (!localStorage.getItem(LS_URL)) {
   $('setup-banner').classList.add('visible');
   setPill('err', 'Sin configurar');
-  // Still load prices even without sheets
-  fetchAllPrices().then(()=>render());
+  state.prices = buildFallbackPrices();
+  render();
 } else {
   refresh();
 }
