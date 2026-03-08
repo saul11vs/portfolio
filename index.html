@@ -314,6 +314,31 @@ const FUND_META = {
   },
 };
 
+// Nombres tal como aparecen en Google Sheets → nombre interno del dashboard
+const FUND_ALIAS = {
+  "fidelity msci world index fund":           "Fidelity MSCI World",
+  "fidelity msci world index fund p-acc-eur": "Fidelity MSCI World",
+  "fidelity msci world":                      "Fidelity MSCI World",
+  "ishares emerging markets index fund":      "iShares Emerging Markets",
+  "ishares emerging markets":                 "iShares Emerging Markets",
+  "robecosam smart energy equities":          "RobecoSAM Smart Energy",
+  "robecosam smart energy":                   "RobecoSAM Smart Energy",
+  "horos value internacional fi":             "Horos Value Internacional",
+  "horos value internacional":                "Horos Value Internacional",
+};
+
+function normalizeFundName(raw) {
+  if (!raw) return raw;
+  const key = raw.trim().toLowerCase();
+  // exact alias match
+  if (FUND_ALIAS[key]) return FUND_ALIAS[key];
+  // partial match — check if any alias key is contained in the raw name
+  for (const [alias, canonical] of Object.entries(FUND_ALIAS)) {
+    if (key.includes(alias) || alias.includes(key)) return canonical;
+  }
+  return raw;
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  ESTADO
 // ═══════════════════════════════════════════════════════════════
@@ -408,9 +433,9 @@ function buildFallbackPrices() {
 function buildPortfolio() {
   const map = {};
   state.movements.forEach(m => {
-    const key = m.fondo;
+    const key = normalizeFundName(m.fondo);
     if (!map[key]) map[key] = { parts:0, invested:0 };
-    const sign = m.tipo === 'Suscripción' ? 1 : -1;
+    const sign = (m.tipo||'').toLowerCase().includes('reembolso') ? -1 : 1;
     map[key].parts    += sign * (parseFloat(m.participaciones)||0);
     map[key].invested += sign * (parseFloat(m.importe)||0);
   });
@@ -525,12 +550,12 @@ function render() {
   // ── MOVEMENTS TABLE ──
   const sorted = [...state.movements].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
   $('mov-body').innerHTML = sorted.map(m=>{
-    const meta = FUND_META[m.fondo]||{color:'#888'};
+    const normalName = normalizeFundName(m.fondo);
+    const meta = FUND_META[normalName]||{color:'#888'};
     const d = new Date(m.fecha+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'2-digit'});
-    const isPos = m.tipo==='Suscripción';
     return `<tr>
       <td>${d}</td>
-      <td><span class="td-dot" style="background:${meta.color}"></span>${m.fondo}</td>
+      <td><span class="td-dot" style="background:${meta.color}"></span>${normalName}</td>
       <td>${n4(m.participaciones)}</td>
       <td>${eur(parseFloat(m.vl_aplicado))}</td>
       <td style="color:${meta.color}">${eur(parseFloat(m.importe))}</td>
