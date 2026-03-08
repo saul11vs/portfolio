@@ -402,20 +402,29 @@ async function fetchAll() {
     if (cached && Date.now()-cached.ts < PRICE_TTL) return cached.data;
   } catch(e){}
 
-  try {
-    const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    const res   = await fetch(proxy, { signal: AbortSignal.timeout(15000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data  = await res.json();
-    if (!data.ok) throw new Error('Respuesta inesperada');
-    // cache it
-    try { sessionStorage.setItem(LS_CACHE, JSON.stringify({ ts: Date.now(), data })); } catch(e){}
-    return data;
-  } catch(e) {
-    console.error('Apps Script error:', e);
-    setPill('err', 'Error al conectar con Google Sheets');
-    return null;
+  const proxies = [
+    u => u,  // directo primero
+    u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+  ];
+
+  for (const makeUrl of proxies) {
+    try {
+      const res = await fetch(makeUrl(url), { signal: AbortSignal.timeout(12000) });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (!data.ok) continue;
+      try { sessionStorage.setItem(LS_CACHE, JSON.stringify({ ts: Date.now(), data })); } catch(e){}
+      return data;
+    } catch(e) {
+      console.warn('Proxy failed, trying next...', e.message);
+    }
   }
+
+  console.error('All proxies failed');
+  setPill('err', 'Error al conectar con Google Sheets');
+  return null;
 }
 
 // fallback: use last known VL from movements
